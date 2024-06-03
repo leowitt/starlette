@@ -39,7 +39,9 @@ class Response:
             self.media_type = media_type
         self.background = background
         self.body = self.render(content)
+        print(f"WITT __init__ response body: {self.body}")
         self.init_headers(headers)
+        print(f"WITT __init__ response raw_headers: {self.raw_headers}") 
 
     def render(self, content: typing.Any) -> bytes:
         if content is None:
@@ -126,6 +128,7 @@ class Response:
             cookie[key]["samesite"] = samesite
         cookie_val = cookie.output(header="").strip()
         self.raw_headers.append((b"set-cookie", cookie_val.encode("latin-1")))
+        print(f"WITT set_cookie response raw_headers: {self.raw_headers}") 
 
     def delete_cookie(
         self,
@@ -159,8 +162,10 @@ class Response:
         await send({"type": prefix + "http.response.body", "body": self.body})
 
         if self.background is not None:
+            print("WITT __call__ response background")
             await self.background()
 
+        print(f"WITT __call__ response prefix {prefix} body: {self.body} raw_headers: {self.raw_headers}") 
 
 class HTMLResponse(Response):
     media_type = "text/html"
@@ -250,8 +255,10 @@ class StreamingResponse(Response):
         async for chunk in self.body_iterator:
             if not isinstance(chunk, (bytes, memoryview)):
                 chunk = chunk.encode(self.charset)
+            print(f"\nWITT   - stream_response ({chunk})")
             await send({"type": "http.response.body", "body": chunk, "more_body": True})
 
+        print(f"\nWITT   - stream_response last")
         await send({"type": "http.response.body", "body": b"", "more_body": False})
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
